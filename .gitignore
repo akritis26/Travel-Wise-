@@ -1,0 +1,6 @@
+.DS_Store
+__pycache__/
+*.pyc
+Stravl_Travel_Preference_Data.csv
+training_data.csv
+interactions.csv
