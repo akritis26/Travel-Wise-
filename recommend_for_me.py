@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 import numpy as np
 import pandas as pd
@@ -53,7 +54,9 @@ profile = {
         multiple=False
     ),
     "form_b": ask_codes(
-        "Budget/night: 0=under $50, 1=$50-$99, 2=$100-$249, 3=$300+:",
+        "Budget per person/night (approx. INR): "
+        "0=under ₹4,800, 1=₹4,800-₹9,400, "
+        "2=₹9,500-₹23,700, 3=₹28,500+:",
         ["0", "1", "2", "3"]
     ),
     "form_c": ask_codes(
@@ -253,8 +256,65 @@ ranked = sorted(
 
 print(f"\nYour top 5 suggestions, based on {neighbor_count} similar travelers:")
 
-for score, destination_id in ranked:
+for number, (score, destination_id) in enumerate(ranked, start=1):
     print(
-        f"- {destination_names[destination_id]} "
+        f"{number}. {destination_names[destination_id]} "
         f"(model score: {score:.3f})"
     )
+
+
+# Load the destination details so a traveler can choose one recommendation.
+details = pd.read_csv(
+    "destination_details.csv",
+    dtype={"destination_id": str}
+).fillna("")
+details_by_id = details.set_index("destination_id")
+
+
+# Ask which recommendation the traveler wants to learn more about.
+while True:
+    choice = input(
+        f"\nType a recommendation number (1-{len(ranked)}) for details, "
+        "or press Enter to finish: "
+    ).strip()
+
+    if not choice:
+        break
+
+    if not choice.isdigit() or not 1 <= int(choice) <= len(ranked):
+        print(f"Please enter a number from 1 to {len(ranked)}.")
+        continue
+
+    _, destination_id = ranked[int(choice) - 1]
+    detail = details_by_id.loc[str(destination_id)]
+
+    print(f"\nMore about {detail['destination_name']}:")
+
+    # Only show article text when its title clearly matches the place name.
+    place_name = detail["destination_name"].split(",", 1)[0].strip().casefold()
+    article_title = detail["wikipedia_title"].strip().casefold()
+    title_matches_place = (
+        article_title == place_name
+        or article_title.startswith(f"{place_name} (")
+    )
+    safe_to_show_details = (
+        detail["match_status"] == "matched" and title_matches_place
+    )
+
+    if safe_to_show_details and detail["overview"]:
+        print("Overview:", detail["overview"])
+        if detail["interest_tags"]:
+            tags = ", ".join(json.loads(detail["interest_tags"]))
+            print("Interest tags:", tags)
+    else:
+        print("No confirmed destination overview is available for this match.")
+        if detail["wikipedia_title"]:
+            print("Possible article title:", detail["wikipedia_title"])
+
+    if detail["source_url"]:
+        print("Source:", detail["source_url"])
+
+    if not safe_to_show_details:
+        print("Note: check the source before using it; this match is uncertain.")
+
+    break
