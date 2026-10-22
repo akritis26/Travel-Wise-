@@ -646,7 +646,7 @@ nav {
       <p class="location-note">Rank scores are preference-match scores; higher scores indicate a closer fit.</p>
     </div>
     <div class="destinations" id="destinations"></div>
-    <button class="btn-restart" onclick="location.reload()">Start Over ↺</button>
+    <button class="btn-restart" id="restartBtn" type="button">Start Over ↺</button>
   </div>
 </main>
 
@@ -919,6 +919,8 @@ document.getElementById('surveyForm').addEventListener('submit', async (e) => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Server error');
     
+    sessionStorage.setItem('travelwiseRecommendations', JSON.stringify(data));
+
     // Switch Screens
     document.getElementById('surveyScreen').classList.remove('active');
     document.getElementById('resultsScreen').classList.add('active');
@@ -1020,6 +1022,29 @@ function showToast(msg) {
   toast.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+document.getElementById('restartBtn').addEventListener('click', () => {
+  sessionStorage.removeItem('travelwiseRecommendations');
+  window.location.href = '/';
+});
+
+if (new URLSearchParams(window.location.search).get('return') === 'recommendations') {
+  const savedResults = sessionStorage.getItem('travelwiseRecommendations');
+  if (savedResults) {
+    try {
+      const data = JSON.parse(savedResults);
+      if (Array.isArray(data.recommendations)) {
+        document.getElementById('introScreen').classList.remove('active');
+        document.getElementById('surveyScreen').classList.remove('active');
+        document.getElementById('resultsScreen').classList.add('active');
+        renderResults(data);
+      }
+    } catch (error) {
+      console.error('Saved recommendations could not be restored:', error);
+      sessionStorage.removeItem('travelwiseRecommendations');
+    }
+  }
 }
 </script>
 </body>
