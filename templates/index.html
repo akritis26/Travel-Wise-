@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Tripwise — Find Your Perfect Escape</title>
+<title>Travelwise — Find Your Perfect Escape</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -321,6 +321,16 @@ nav {
 .dest-image { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
 .dest-card:hover .dest-image { transform: scale(1.08); }
 .dest-image-overlay { position: absolute; inset: 0; background: linear-gradient(to top, var(--surface) 0%, transparent 70%); pointer-events: none; }
+.dest-image-placeholder {
+  width: 100%; height: 100%; display: grid; place-items: center;
+  background: linear-gradient(135deg, rgba(184,166,255,0.12), rgba(255,77,141,0.08));
+  color: var(--text-muted); font-size: 13px;
+}
+.image-credit {
+  position: absolute; right: 12px; bottom: 12px; padding: 4px 8px;
+  border-radius: 100px; background: rgba(10,10,15,0.75); color: var(--text-dim);
+  font-size: 10px; pointer-events: none;
+}
 
 .dest-rank-badge {
   position: absolute; top: 16px; left: 16px; width: 40px; height: 40px; border-radius: 10px;
@@ -409,7 +419,7 @@ nav {
 <nav>
   <div class="logo">
     <div class="logo-icon">✈</div>
-    <span>Tripwise</span>
+    <span>Travelwise</span>
   </div>
 </nav>
 
@@ -422,7 +432,7 @@ nav {
 
   <div class="intro-content">
     <h1>Find your <span class="gradient-text">perfect escape</span></h1>
-    <p>Tell us what you love. Tripwise matches your preferences with real traveler experiences to find places worth exploring.</p>
+    <p>Tell us what you love. Travelwise matches your preferences with real traveler experiences to find places worth exploring.</p>
     <div class="intro-summary">Smart recommendations based on real preferences.</div>
 
     <div class="intro-stats">
@@ -904,7 +914,7 @@ document.getElementById('surveyForm').addEventListener('submit', async (e) => {
 
     const contentType = res.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
-      throw new Error(`Tripwise returned an unexpected response (HTTP ${res.status}). Make sure the app is running.`);
+      throw new Error(`Travelwise returned an unexpected response (HTTP ${res.status}). Make sure the app is running.`);
     }
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Server error');
@@ -919,8 +929,8 @@ document.getElementById('surveyForm').addEventListener('submit', async (e) => {
   } catch (err) {
     console.error(err);
     const message = err instanceof TypeError
-      ? 'Cannot reach Tripwise. Run python3 test_app.py, then open http://127.0.0.1:5001.'
-      : (err instanceof Error ? err.message : 'Tripwise could not complete your request.');
+      ? 'Cannot reach Travelwise. Run python3 test_app.py, then open http://127.0.0.1:5001.'
+      : (err instanceof Error ? err.message : 'Travelwise could not complete your request.');
     showToast(message);
     btn.classList.remove('loading');
     btn.disabled = false;
@@ -939,7 +949,7 @@ function renderResults(data) {
       const card = document.createElement('div');
       card.className = 'dest-card';
 
-      const imageUrl = `https://picsum.photos/seed/${encodeURIComponent(dest.destination_name)}/600/400`;
+      const imageUrl = dest.image_url ? escapeHtml(dest.image_url) : '';
 
       const tagsHtml = (dest.interest_tags || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('') || '<span class="tag">destination</span>';
       const mapQuery = encodeURIComponent(dest.destination_name);
@@ -950,8 +960,11 @@ function renderResults(data) {
 
       card.innerHTML = `
         <div class="dest-image-wrap">
-          <img src="${imageUrl}" class="dest-image" alt="${escapeHtml(dest.destination_name)}" />
+          ${imageUrl
+            ? `<img src="${imageUrl}" class="dest-image" alt="${escapeHtml(dest.destination_name)} — Wikipedia photo" />`
+            : '<div class="dest-image-placeholder">No Wikipedia photo available</div>'}
           <div class="dest-image-overlay"></div>
+          ${imageUrl ? '<div class="image-credit">Photo from Wikipedia</div>' : ''}
           <div class="dest-rank-badge">#${idx + 1}</div>
         </div>
         <div class="dest-content">
@@ -969,12 +982,23 @@ function renderResults(data) {
         <div class="dest-actions">
           <a class="dest-action" href="${googleMapsUrl}" target="_blank" rel="noopener noreferrer">Directions · Google Maps</a>
           <a class="dest-action" href="${appleMapsUrl}" target="_blank" rel="noopener noreferrer">Apple Maps</a>
-          ${dest.source_url ? `<a class="dest-action" href="${escapeHtml(dest.source_url)}" target="_blank" rel="noopener noreferrer">View on Wikipedia</a>` : ''}
+          <a class="dest-action" href="/explore/${encodeURIComponent(dest.city_destination_id)}">Explore ${escapeHtml(dest.city_name || 'city')}</a>
         </div>
         <div class="dest-expand">
           <p>${escapeHtml(overview)}</p>
         </div>
       `;
+
+      const image = card.querySelector('.dest-image');
+      if (image) {
+        image.addEventListener('error', () => {
+          const placeholder = document.createElement('div');
+          placeholder.className = 'dest-image-placeholder';
+          placeholder.textContent = 'Wikipedia photo could not be loaded';
+          image.replaceWith(placeholder);
+          card.querySelector('.image-credit')?.remove();
+        }, { once: true });
+      }
 
       card.addEventListener('click', event => {
         if (!event.target.closest('a, button')) card.classList.toggle('expanded');

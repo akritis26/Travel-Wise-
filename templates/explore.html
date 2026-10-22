@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Explore {{ city.name }} · Travelwise</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0a0a0f;
+      --surface: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.1);
+      --text: #f5f5f7;
+      --muted: #a0a0b0;
+      --accent: #b8a6ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6;
+    }
+    a { color: inherit; }
+    nav {
+      padding: 18px max(24px, calc((100vw - 1100px) / 2));
+      border-bottom: 1px solid var(--border); background: rgba(10,10,15,.9);
+    }
+    .brand { text-decoration: none; font: 700 22px "Clash Display", sans-serif; color: var(--accent); }
+    main { width: min(1100px, calc(100% - 40px)); margin: 44px auto 80px; }
+    .back { display: inline-block; margin-bottom: 24px; color: var(--muted); text-decoration: none; }
+    .back:hover, .source:hover { color: var(--text); }
+    .hero {
+      display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, .8fr);
+      gap: 32px; align-items: center; padding: 32px; border: 1px solid var(--border);
+      border-radius: 24px; background: var(--surface);
+    }
+    h1, h2, h3 { font-family: "Clash Display", Inter, sans-serif; line-height: 1.15; }
+    h1 { margin: 0 0 8px; font-size: clamp(38px, 6vw, 64px); }
+    h2 { margin: 0 0 20px; font-size: clamp(28px, 4vw, 38px); }
+    .country { color: var(--accent); margin: 0 0 18px; }
+    .overview { color: var(--muted); margin: 0; }
+    .hero-image, .no-image {
+      width: 100%; height: 260px; border-radius: 16px; object-fit: cover;
+      background: linear-gradient(135deg, rgba(184,166,255,.18), rgba(255,77,141,.12));
+    }
+    .no-image { display: grid; place-items: center; color: var(--muted); }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+    .button {
+      display: inline-flex; align-items: center; justify-content: center; padding: 11px 16px;
+      border: 1px solid var(--border); border-radius: 999px; background: rgba(255,255,255,.08);
+      text-decoration: none; font-size: 14px; font-weight: 600;
+    }
+    .button:hover { background: rgba(255,255,255,.16); }
+    .section { margin-top: 56px; }
+    .section-intro { margin: -8px 0 24px; color: var(--muted); }
+    .places { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+    .place {
+      overflow: hidden; border: 1px solid var(--border); border-radius: 18px;
+      background: var(--surface); display: flex; flex-direction: column;
+    }
+    .place img, .place .no-image { height: 190px; border-radius: 0; }
+    .place-content { padding: 20px; display: flex; flex-direction: column; flex: 1; }
+    .place h3 { margin: 0 0 8px; font-size: 23px; }
+    .place p { margin: 0 0 18px; color: var(--muted); font-size: 14px; }
+    .tags { display: flex; flex-wrap: wrap; gap: 7px; margin: auto 0 18px; }
+    .tag { padding: 4px 9px; border: 1px solid var(--border); border-radius: 999px; color: var(--muted); font-size: 11px; }
+    .place-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .place-actions .button { padding: 8px 11px; font-size: 12px; }
+    .source { display: inline-block; margin-top: 12px; color: var(--muted); font-size: 12px; }
+    .discovery {
+      padding: 24px; border: 1px solid var(--border); border-radius: 18px;
+      background: var(--surface); color: var(--muted);
+    }
+    .discovery p { margin-top: 0; }
+    @media (max-width: 700px) {
+      .hero { grid-template-columns: 1fr; padding: 22px; }
+      .hero-image, .hero .no-image { height: 210px; }
+    }
+  </style>
+</head>
+<body>
+  <nav><a class="brand" href="/">✈ Travelwise</a></nav>
+  <main>
+    <a class="back" href="/">← Back to recommendations</a>
+    <section class="hero">
+      <div>
+        <h1>Explore {{ city.name }}</h1>
+        <p class="country">{{ city.country }}</p>
+        <p class="overview">{{ city.overview or "Discover things to see and do in this destination." }}</p>
+        <div class="hero-actions">
+          <a class="button" href="{{ maps_search_url }}" target="_blank" rel="noopener noreferrer">Find places nearby · Google Maps</a>
+          <a class="button" href="https://maps.apple.com/?q={{ (city.name ~ ', ' ~ city.country)|urlencode }}" target="_blank" rel="noopener noreferrer">Open Apple Maps</a>
+          {% if city.source_url %}
+          <a class="button" href="{{ city.source_url }}" target="_blank" rel="noopener noreferrer">Read city guide · Wikipedia</a>
+          {% endif %}
+        </div>
+      </div>
+      {% if city.image_url %}
+      <img class="hero-image" src="{{ city.image_url }}" alt="{{ city.name }} — Wikipedia photo" />
+      {% else %}
+      <div class="no-image">No Wikipedia photo available</div>
+      {% endif %}
+    </section>
+
+    <section class="section">
+      <h2>Places to visit{% if attractions %} in {{ city.name }}{% endif %}</h2>
+      {% if attractions %}
+      <p class="section-intro">Explore these local sights, with descriptions and direct map links.</p>
+      <div class="places">
+        {% for place in attractions %}
+        <article class="place">
+          {% if place.image_url %}
+          <img src="{{ place.image_url }}" alt="{{ place.name }} — Wikipedia photo" />
+          {% else %}
+          <div class="no-image">No Wikipedia photo available</div>
+          {% endif %}
+          <div class="place-content">
+            <h3>{{ place.name }}</h3>
+            <p>{{ place.overview }}</p>
+            <div class="tags">
+              {% for tag in place.interest_tags %}<span class="tag">{{ tag }}</span>{% endfor %}
+            </div>
+            <div class="place-actions">
+              <a class="button" href="https://www.google.com/maps/dir/?api=1&amp;destination={{ (place.name ~ ', ' ~ city.name ~ ', ' ~ city.country)|urlencode }}" target="_blank" rel="noopener noreferrer">Directions</a>
+              <a class="button" href="https://maps.apple.com/?daddr={{ (place.name ~ ', ' ~ city.name ~ ', ' ~ city.country)|urlencode }}" target="_blank" rel="noopener noreferrer">Apple Maps</a>
+            </div>
+            <a class="source" href="{{ place.source_url }}" target="_blank" rel="noopener noreferrer">Article and photo source: Wikipedia</a>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="discovery">
+        <p>We don’t yet have a verified local-sights list for {{ city.name }} in Tripwise. Use these searches to discover current attractions without showing unverified recommendations.</p>
+        <div class="hero-actions">
+          <a class="button" href="https://www.google.com/maps/search/?api=1&amp;query={{ ('attractions in ' ~ city.name ~ ', ' ~ city.country)|urlencode }}" target="_blank" rel="noopener noreferrer">Attractions</a>
+          <a class="button" href="https://www.google.com/maps/search/?api=1&amp;query={{ ('historic places in ' ~ city.name ~ ', ' ~ city.country)|urlencode }}" target="_blank" rel="noopener noreferrer">Historic places</a>
+          <a class="button" href="https://www.google.com/maps/search/?api=1&amp;query={{ ('museums in ' ~ city.name ~ ', ' ~ city.country)|urlencode }}" target="_blank" rel="noopener noreferrer">Museums</a>
+          <a class="button" href="https://www.google.com/maps/search/?api=1&amp;query={{ ('parks and nature in ' ~ city.name ~ ', ' ~ city.country)|urlencode }}" target="_blank" rel="noopener noreferrer">Parks &amp; nature</a>
+        </div>
+      </div>
+      {% endif %}
+    </section>
+  </main>
+</body>
+</html>

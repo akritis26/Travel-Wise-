@@ -3,6 +3,9 @@ import json
 import re
 import traceback
 import unicodedata
+from urllib.error import HTTPError, URLError
+from urllib.parse import unquote, urlencode, urlparse
+from urllib.request import Request, urlopen
 
 import numpy as np
 import pandas as pd
@@ -39,6 +42,9 @@ try:
     DETAILS_BY_ID = DETAILS.set_index("destination_id").to_dict(orient="index")
 except FileNotFoundError:
     DETAILS_BY_ID = {}
+
+WIKIPEDIA_THUMBNAIL_API = "https://en.wikipedia.org/w/api.php"
+WIKIPEDIA_THUMBNAILS = {}
 
 USER_PROFILES = (
     DATA[["user_id"] + SURVEY_COLUMNS]
@@ -98,6 +104,9 @@ COUNTRY_BY_DESTINATION = {
     index: name.rsplit(",", 1)[-1].strip() if "," in name else ""
     for index, name in enumerate(DEST_NAMES)
 }
+DESTINATION_ID_BY_NAME = {
+    name: destination_id for destination_id, name in enumerate(DEST_NAMES)
+}
 
 LANDMARKS_BY_CITY = {
     "Jaipur, India": [
@@ -105,7 +114,7 @@ LANDMARKS_BY_CITY = {
             "name": "Amer Fort",
             "overview": "A hilltop fort known for its Rajput architecture, courtyards, and views over Maota Lake.",
             "interest_tags": ["culture", "history", "adventure", "mountain"],
-            "wikipedia_title": "Amer Fort",
+            "wikipedia_title": "Amber_Fort",
         },
         {
             "name": "Jal Mahal",
@@ -184,6 +193,8 @@ def city_landmark_recommendations(city_name, city_score, body):
     return [
         {
             "destination_name": f"{landmark['name']}, Jaipur, India",
+            "city_destination_id": DESTINATION_ID_BY_NAME[city_name],
+            "city_name": city_name.split(",", 1)[0],
             "score": round(float(score), 4),
             "overview": landmark["overview"],
             "interest_tags": landmark["interest_tags"],
@@ -193,6 +204,73 @@ def city_landmark_recommendations(city_name, city_score, body):
         }
         for score, landmark in ranked[:5]
     ]
+
+
+def wikipedia_title_from_url(source_url):
+    parsed_url = urlparse(source_url)
+    if parsed_url.scheme != "https" or parsed_url.netloc != "en.wikipedia.org":
+        return ""
+    if parsed_url.path.startswith("/wiki/") and not parsed_url.query:
+        return unquote(parsed_url.path.removeprefix("/wiki/")).replace("_", " ")
+    return ""
+
+
+def wikipedia_thumbnail_urls(recommendations):
+    title_by_key = {
+        wikipedia_title_from_url(item.get("source_url", "")): item.get("source_url", "")
+        for item in recommendations
+    }
+    titles = [title for title in title_by_key if title]
+    missing_titles = [
+        title for title in titles if title not in WIKIPEDIA_THUMBNAILS
+    ]
+    if missing_titles:
+        params = urlencode({
+            "action": "query",
+            "prop": "pageimages",
+            "format": "json",
+            "piprop": "thumbnail",
+            "pithumbsize": "800",
+            "titles": "|".join(missing_titles),
+        })
+        request = Request(
+            f"{WIKIPEDIA_THUMBNAIL_API}?{params}",
+            headers={
+                "User-Agent": (
+                    "TripwiseStudentProject/1.0 "
+                    "(https://github.com/akritis26/Travel-Wise/)"
+                ),
+                "Accept": "application/json",
+            },
+        )
+        try:
+            with urlopen(request, timeout=8) as response:
+                pages = json.load(response).get("query", {}).get("pages", {})
+            thumbnails_by_title = {}
+            for page in pages.values():
+                thumbnail = page.get("thumbnail", {}).get("source", "")
+                if not thumbnail:
+                    continue
+                parsed_thumbnail = urlparse(thumbnail)
+                if (
+                    parsed_thumbnail.scheme != "https"
+                    or not parsed_thumbnail.hostname
+                    or not parsed_thumbnail.hostname.endswith(".wikimedia.org")
+                ):
+                    continue
+                thumbnails_by_title[page.get("title", "").casefold()] = thumbnail
+
+            for title in missing_titles:
+                WIKIPEDIA_THUMBNAILS[title] = thumbnails_by_title.get(
+                    title.casefold(), ""
+                )
+        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as error:
+            print(f"Could not load Wikipedia thumbnails: {error}")
+
+    for recommendation in recommendations:
+        title = wikipedia_title_from_url(recommendation.get("source_url", ""))
+        recommendation["image_url"] = WIKIPEDIA_THUMBNAILS.get(title, "")
+    return recommendations
 
 
 def destination_options():
@@ -218,6 +296,53 @@ DESTINATION_OPTIONS = destination_options()
 @app.route("/")
 def index():
     return render_template("index.html")
+
+
+@app.route("/explore/<int:destination_id>")
+def explore_city(destination_id):
+    if not 0 <= destination_id < N_DEST:
+        return "Destination not found.", 404
+
+    city_name = DEST_NAMES[destination_id]
+    detail = DETAILS_BY_ID.get(str(destination_id), {})
+    overview = detail.get("overview", "")
+    source_url = detail.get("source_url", "")
+    city = {
+        "name": city_name.split(",", 1)[0].strip(),
+        "country": COUNTRY_BY_DESTINATION.get(destination_id, ""),
+        "overview": overview,
+        "source_url": source_url,
+        "image_url": "",
+    }
+    if source_url:
+        city["image_url"] = wikipedia_thumbnail_urls([{
+            "source_url": source_url,
+        }])[0]["image_url"]
+
+    attractions = []
+    for landmark in LANDMARKS_BY_CITY.get(city_name, []):
+        wikipedia_url = (
+            "https://en.wikipedia.org/wiki/" + landmark["wikipedia_title"]
+        )
+        attractions.append({
+            "name": landmark["name"],
+            "overview": landmark["overview"],
+            "interest_tags": landmark["interest_tags"],
+            "source_url": wikipedia_url,
+            "image_url": "",
+        })
+    if attractions:
+        attractions = wikipedia_thumbnail_urls(attractions)
+
+    return render_template(
+        "explore.html",
+        city=city,
+        attractions=attractions,
+        maps_search_url=(
+            "https://www.google.com/maps/search/?api=1&"
+            + urlencode({"query": f"things to do in {city_name}"})
+        ),
+    )
 
 
 @app.route("/api/location-options")
@@ -371,6 +496,7 @@ def recommend():
                     selected_city, scores[city_destination_id], body
                 )
                 if landmarks is not None:
+                    landmarks = wikipedia_thumbnail_urls(landmarks)
                     return jsonify({
                         "similar_travelers": k,
                         "recommendations": landmarks,
@@ -388,6 +514,8 @@ def recommend():
 
             recommendation = {
                 "destination_name": DEST_NAMES[destination_id],
+                "city_destination_id": destination_id,
+                "city_name": DEST_NAMES[destination_id].split(",", 1)[0].strip(),
                 "score": round(float(scores[destination_id]), 4),
                 "overview": detail.get("overview", ""),
                 "interest_tags": tags,
@@ -399,7 +527,7 @@ def recommend():
 
         return jsonify({
             "similar_travelers": k,
-            "recommendations": recommendations,
+            "recommendations": wikipedia_thumbnail_urls(recommendations),
             "message": "No destinations matched that location and distance. Try a broader area or radius."
             if not recommendations and location_mode != "anywhere" else "",
         })
