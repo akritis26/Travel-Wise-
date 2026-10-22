@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>TravelWise — Find Your Perfect Escape</title>
+<title>Tripwise — Find Your Perfect Escape</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -222,6 +222,30 @@ nav {
 /* Options Grid */
 .options { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
 
+.location-panel {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 32px; margin-bottom: 24px;
+}
+.location-panel h3 { font-family: 'Clash Display', sans-serif; font-size: 22px; margin-bottom: 6px; }
+.location-panel > p { color: var(--text-muted); font-size: 14px; margin-bottom: 22px; }
+.location-mode { width: 100%; margin-bottom: 18px; }
+.location-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; }
+.location-field label { display: block; color: var(--text-dim); font-size: 13px; margin: 0 0 7px; }
+.location-field select {
+  width: 100%; min-height: 48px; padding: 10px 12px; color: var(--text);
+  background: #17171f; border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+  font: inherit;
+}
+.location-field select:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+.location-field input {
+  width: 100%; min-height: 48px; padding: 10px 12px; color: var(--text);
+  background: #17171f; border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+  font: inherit;
+}
+.location-field input:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+.location-note { color: var(--text-muted); font-size: 12px; margin-top: 12px; }
+[hidden] { display: none !important; }
+
 .option {
   position: relative; padding: 18px 20px; border-radius: var(--radius-sm);
   background: rgba(255,255,255,0.02); border: 1px solid var(--border);
@@ -324,6 +348,13 @@ nav {
 .dest-card.expanded .dest-expand { display: block; }
 .dest-expand a { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border-radius: 100px; background: rgba(255,255,255,0.1); color: var(--text); text-decoration: none; font-size: 14px; transition: background 0.2s; width: 100%; margin-top: 16px; }
 .dest-expand a:hover { background: rgba(255,255,255,0.2); }
+.dest-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 24px 20px; }
+.dest-action {
+  display: inline-flex; align-items: center; justify-content: center; padding: 9px 12px;
+  border-radius: 100px; background: rgba(255,255,255,0.08); border: 1px solid var(--border-strong);
+  color: var(--text); text-decoration: none; font-size: 12px; font-weight: 600; transition: background 0.2s;
+}
+.dest-action:hover { background: rgba(255,255,255,0.18); }
 
 .btn-restart { display: block; margin: 0 auto; padding: 16px 32px; border-radius: 100px; background: transparent; color: var(--text-dim); border: 1px solid var(--border-strong); font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; font-family: 'Inter', sans-serif; }
 .btn-restart:hover { background: var(--surface-hover); color: var(--text); }
@@ -378,7 +409,7 @@ nav {
 <nav>
   <div class="logo">
     <div class="logo-icon">✈</div>
-    <span>TravelWise</span>
+    <span>Tripwise</span>
   </div>
 </nav>
 
@@ -391,7 +422,7 @@ nav {
 
   <div class="intro-content">
     <h1>Find your <span class="gradient-text">perfect escape</span></h1>
-    <p>Answer a few quick questions. Our AI model will <strong>match your vibe</strong> against thousands of real travelers and surface the destinations you'll absolutely love.</p>
+    <p>Tell us what you love. Tripwise matches your preferences with real traveler experiences to find places worth exploring.</p>
     <div class="intro-summary">Smart recommendations based on real preferences.</div>
 
     <div class="intro-stats">
@@ -514,7 +545,7 @@ nav {
 
       <!-- Q9 -->
       <div class="question" data-q="form_r">
-        <div class="q-header"><div class="q-number">09</div><div class="q-text"><h3>Where do you want to go?</h3><div class="q-hint">Anywhere or a specific region?</div></div></div>
+        <div class="q-header"><div class="q-number">09</div><div class="q-text"><h3>Which regions interest you?</h3><div class="q-hint">This helps match your preferences; you can set an exact place below.</div></div></div>
         <div class="options" data-single="true">
           <div class="option" data-value="0"><div class="check">✓</div><span class="label">🌍 Anywhere</span></div>
           <div class="option" data-value="1"><div class="check">✓</div><span class="label">📍 Specific region</span></div>
@@ -536,6 +567,56 @@ nav {
         </div>
       </div>
 
+      <section class="location-panel" aria-labelledby="locationTitle">
+        <h3 id="locationTitle">Where would you like to go?</h3>
+        <p>Keep recommendations open, choose a specific destination, or find places near a city in India. Type to search or scroll through the available choices.</p>
+        <div class="location-field location-mode">
+          <label for="locationMode">Location preference</label>
+          <select id="locationMode">
+            <option value="anywhere">Anywhere (no location filter)</option>
+            <option value="specific">A specific country or place</option>
+            <option value="nearby">Near my starting city in India</option>
+          </select>
+        </div>
+        <div id="specificLocationFields" class="location-fields" hidden>
+          <div class="location-field">
+            <label for="destinationCountry">Destination country</label>
+            <input id="destinationCountry" list="destinationCountries" placeholder="Type or choose a country" autocomplete="off" />
+            <datalist id="destinationCountries"></datalist>
+          </div>
+          <div class="location-field" id="destinationStateField" hidden>
+            <label for="destinationState">State in India (optional)</label>
+            <input id="destinationState" list="destinationStates" placeholder="Type or choose a state" autocomplete="off" />
+            <datalist id="destinationStates"></datalist>
+          </div>
+          <div class="location-field">
+            <label for="destinationCity">Destination city (optional)</label>
+            <input id="destinationCity" list="destinationCities" placeholder="Type or choose a city" autocomplete="off" />
+            <datalist id="destinationCities"></datalist>
+          </div>
+        </div>
+        <div id="nearbyLocationFields" class="location-fields" hidden>
+          <div class="location-field">
+            <label for="originState">Starting state in India</label>
+            <select id="originState"><option value="">Choose a state</option></select>
+          </div>
+          <div class="location-field">
+            <label for="originCity">Starting city</label>
+            <select id="originCity" disabled><option value="">Choose a state first</option></select>
+          </div>
+          <div class="location-field">
+            <label for="distanceKm">Distance range</label>
+            <select id="distanceKm">
+              <option value="100">Within 100 km</option>
+              <option value="300" selected>Within 300 km</option>
+              <option value="500">Within 500 km</option>
+              <option value="1000">Within 1,000 km</option>
+            </select>
+          </div>
+          <p class="location-note" style="grid-column:1/-1">Distances are approximate straight-line distances. Nearby filtering currently uses Indian cities in the location data.</p>
+        </div>
+      </section>
+
       <div class="submit-wrap">
         <button type="submit" class="submit-btn" id="submitBtn">
           <span class="btn-text">Find my destinations</span>
@@ -552,6 +633,7 @@ nav {
     <div class="results-header">
       <h2>Your top 5 matches</h2>
       <p>Based on <strong id="neighborCount">50</strong> travelers with similar taste</p>
+      <p class="location-note">Rank scores are preference-match scores; higher scores indicate a closer fit.</p>
     </div>
     <div class="destinations" id="destinations"></div>
     <button class="btn-restart" onclick="location.reload()">Start Over ↺</button>
@@ -563,6 +645,109 @@ nav {
 <script>
 const answers = {};
 const TOTAL_REQUIRED = 9;
+let locationData = { countries: [], india_states: [], india_destination_states: [], destinations: [] };
+
+function setSelectOptions(select, items, placeholder, getValue, getLabel) {
+  select.replaceChildren();
+  const first = document.createElement('option');
+  first.value = '';
+  first.textContent = placeholder;
+  select.appendChild(first);
+  items.forEach(item => {
+    const option = document.createElement('option');
+    option.value = getValue(item);
+    option.textContent = getLabel(item);
+    select.appendChild(option);
+  });
+}
+
+function setDatalistOptions(input, datalist, items, getValue, getLabel) {
+  datalist.replaceChildren();
+  items.forEach(item => {
+    const option = document.createElement('option');
+    option.value = getValue(item);
+    option.label = getLabel(item);
+    datalist.appendChild(option);
+  });
+  if (!items.some(item => getValue(item) === input.value)) input.value = '';
+}
+
+async function loadLocationOptions() {
+  try {
+    const response = await fetch('/api/location-options');
+    if (!response.ok) throw new Error('Could not load location options');
+    locationData = await response.json();
+    setDatalistOptions(document.getElementById('destinationCountry'), document.getElementById('destinationCountries'),
+      locationData.countries, value => value, value => value);
+    setSelectOptions(document.getElementById('originState'), locationData.india_states,
+      'Choose a state', value => value, value => value);
+  } catch (error) {
+    console.error(error);
+    showToast('Location choices could not load. You can still get recommendations without a location filter.');
+  }
+}
+
+function updateSpecificLocationFields() {
+  const country = document.getElementById('destinationCountry').value;
+  const isIndia = country === 'India';
+  const stateField = document.getElementById('destinationStateField');
+  const stateInput = document.getElementById('destinationState');
+  stateField.hidden = !isIndia;
+  if (isIndia) {
+    setDatalistOptions(stateInput, document.getElementById('destinationStates'),
+      locationData.india_destination_states, value => value, value => value);
+  } else {
+    stateInput.value = '';
+    document.getElementById('destinationStates').replaceChildren();
+  }
+  updateDestinationCities();
+}
+
+function updateDestinationCities() {
+  const country = document.getElementById('destinationCountry').value;
+  const state = document.getElementById('destinationState').value;
+  const choices = locationData.destinations.filter(item =>
+    item.country === country && (!state || item.state === state)
+  );
+  const cityInput = document.getElementById('destinationCity');
+  setDatalistOptions(cityInput, document.getElementById('destinationCities'), choices,
+    item => item.name,
+    item => item.country === 'India' && item.state ? `${item.city} — ${item.state}` : item.city
+  );
+}
+
+async function loadOriginCities() {
+  const state = document.getElementById('originState').value;
+  const citySelect = document.getElementById('originCity');
+  if (!state) {
+    setSelectOptions(citySelect, [], 'Choose a state first', item => item.id, item => item.name);
+    citySelect.disabled = true;
+    return;
+  }
+  citySelect.disabled = true;
+  setSelectOptions(citySelect, [], 'Loading cities…', item => item.id, item => item.name);
+  try {
+    const response = await fetch(`/api/india-cities?state=${encodeURIComponent(state)}`);
+    if (!response.ok) throw new Error('Could not load city choices');
+    const data = await response.json();
+    setSelectOptions(citySelect, data.cities, 'Choose a city', item => item.id, item => item.name);
+    citySelect.disabled = data.cities.length === 0;
+  } catch (error) {
+    console.error(error);
+    setSelectOptions(citySelect, [], 'Could not load cities', item => item.id, item => item.name);
+  }
+}
+
+document.getElementById('locationMode').addEventListener('change', event => {
+  document.getElementById('specificLocationFields').hidden = event.target.value !== 'specific';
+  document.getElementById('nearbyLocationFields').hidden = event.target.value !== 'nearby';
+});
+document.getElementById('destinationCountry').addEventListener('input', updateSpecificLocationFields);
+document.getElementById('destinationCountry').addEventListener('change', updateSpecificLocationFields);
+document.getElementById('destinationState').addEventListener('input', updateDestinationCities);
+document.getElementById('destinationState').addEventListener('change', updateDestinationCities);
+document.getElementById('originState').addEventListener('change', loadOriginCities);
+loadLocationOptions();
 
 // Navigation Logic
 function startSurvey() {
@@ -677,6 +862,16 @@ document.getElementById('surveyForm').addEventListener('submit', async (e) => {
     }
   }
 
+  const locationMode = document.getElementById('locationMode').value;
+  if (locationMode === 'specific' && !document.getElementById('destinationCountry').value) {
+    showToast('Choose a destination country or set location preference to Anywhere.');
+    return;
+  }
+  if (locationMode === 'nearby' && (!document.getElementById('originState').value || !document.getElementById('originCity').value)) {
+    showToast('Choose your starting state and city for nearby recommendations.');
+    return;
+  }
+
   const btn = document.getElementById('submitBtn');
   btn.classList.add('loading');
   btn.disabled = true;
@@ -693,6 +888,12 @@ document.getElementById('surveyForm').addEventListener('submit', async (e) => {
       form_j: answers.form_j || '',
       form_r: answers.form_r || '',
       form_rr: (answers.form_r === '1' && Array.isArray(answers.form_rr)) ? answers.form_rr : [],
+      location_mode: locationMode,
+      destination_country: document.getElementById('destinationCountry').value,
+      destination_state: document.getElementById('destinationState').value,
+      destination_city: document.getElementById('destinationCity').value,
+      origin_geoname_id: document.getElementById('originCity').value,
+      distance_km: document.getElementById('distanceKm').value,
     };
 
     const res = await fetch('/api/recommend', {
@@ -701,9 +902,12 @@ document.getElementById('surveyForm').addEventListener('submit', async (e) => {
       body: JSON.stringify(payload),
     });
 
-    if (!res.ok) throw new Error('Server error');
-
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      throw new Error(`Tripwise returned an unexpected response (HTTP ${res.status}). Make sure the app is running.`);
+    }
     const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Server error');
     
     // Switch Screens
     document.getElementById('surveyScreen').classList.remove('active');
@@ -714,7 +918,10 @@ document.getElementById('surveyForm').addEventListener('submit', async (e) => {
 
   } catch (err) {
     console.error(err);
-    showToast('Something went wrong. Please try again.');
+    const message = err instanceof TypeError
+      ? 'Cannot reach Tripwise. Run python3 test_app.py, then open http://127.0.0.1:5001.'
+      : (err instanceof Error ? err.message : 'Tripwise could not complete your request.');
+    showToast(message);
     btn.classList.remove('loading');
     btn.disabled = false;
   }
@@ -726,16 +933,20 @@ function renderResults(data) {
   container.innerHTML = '';
 
   if (!data.recommendations || data.recommendations.length === 0) {
-    container.innerHTML = `<div style="text-align:center; padding: 40px; color: #888;">No destinations matched your profile.</div>`;
+    container.innerHTML = `<div style="text-align:center; padding: 40px; color: #888;">${escapeHtml(data.message || 'No destinations matched your profile.')}</div>`;
   } else {
     data.recommendations.forEach((dest, idx) => {
       const card = document.createElement('div');
       card.className = 'dest-card';
 
-      const destName = encodeURIComponent(dest.destination_name);
-      const imageUrl = `https://picsum.photos/seed/${idx}-${destName}/600/400`;
+      const imageUrl = `https://picsum.photos/seed/${encodeURIComponent(dest.destination_name)}/600/400`;
 
-      const tagsHtml = (dest.interest_tags || []).map(t => `<span class="tag">${t}</span>`).join('') || '<span class="tag">destination</span>';
+      const tagsHtml = (dest.interest_tags || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('') || '<span class="tag">destination</span>';
+      const mapQuery = encodeURIComponent(dest.destination_name);
+      const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${mapQuery}`;
+      const appleMapsUrl = `https://maps.apple.com/?daddr=${mapQuery}`;
+      const overview = dest.overview || 'A destination worth exploring.';
+      const shortOverview = overview.length > 180 ? `${overview.slice(0, 180).trim()}…` : overview;
 
       card.innerHTML = `
         <div class="dest-image-wrap">
@@ -745,23 +956,29 @@ function renderResults(data) {
         </div>
         <div class="dest-content">
           <h3>${escapeHtml(dest.destination_name)}</h3>
-          <div class="dest-desc">${escapeHtml(dest.overview || 'A destination worth exploring.').slice(0, 180)}...</div>
+          <div class="dest-desc">${escapeHtml(shortOverview)}</div>
           <div class="dest-tags">${tagsHtml}</div>
           <div class="dest-footer">
             <div>
               <div class="score-label">Rank Score</div>
-              <div class="score-value">${dest.score}</div>
+              <div class="score-value">${Number(dest.score).toFixed(3)}</div>
             </div>
-            <div class="score-label" style="color:var(--accent)">Read More ↓</div>
+          <div class="score-label" style="color:var(--accent)">${dest.distance_km !== undefined ? `About ${dest.distance_km} km away · ` : ''}Read More ↓</div>
           </div>
         </div>
+        <div class="dest-actions">
+          <a class="dest-action" href="${googleMapsUrl}" target="_blank" rel="noopener noreferrer">Directions · Google Maps</a>
+          <a class="dest-action" href="${appleMapsUrl}" target="_blank" rel="noopener noreferrer">Apple Maps</a>
+          ${dest.source_url ? `<a class="dest-action" href="${escapeHtml(dest.source_url)}" target="_blank" rel="noopener noreferrer">View on Wikipedia</a>` : ''}
+        </div>
         <div class="dest-expand">
-          <p>${escapeHtml(dest.overview || 'No detailed overview available.')}</p>
-          ${dest.source_url ? `<a href="${dest.source_url}" target="_blank" rel="noopener">View on Wikipedia →</a>` : ''}
+          <p>${escapeHtml(overview)}</p>
         </div>
       `;
 
-      card.addEventListener('click', () => card.classList.toggle('expanded'));
+      card.addEventListener('click', event => {
+        if (!event.target.closest('a, button')) card.classList.toggle('expanded');
+      });
       container.appendChild(card);
     });
   }
