@@ -412,14 +412,19 @@ nav {
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; }
+
+/* Account and profile */
+.account-nav{margin-left:auto;display:flex;align-items:center;gap:10px}.nav-inner{display:flex;align-items:center;width:100%}.account-btn,.account-join{font:600 13px Inter,sans-serif;color:var(--text);background:rgba(255,255,255,.07);border:1px solid var(--border-strong);border-radius:999px;padding:10px 15px;cursor:pointer}.account-join{background:linear-gradient(120deg,var(--pink),#b8a6ff);border:0;color:#100d17}.account-btn:hover,.account-join:hover{transform:translateY(-1px)}.account-avatar{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;margin-right:7px;background:rgba(184,166,255,.2);color:var(--accent)}
+.account-backdrop{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:20px}.account-backdrop.open{display:flex}.account-panel{width:min(480px,100%);max-height:90vh;overflow:auto;background:#15151e;border:1px solid rgba(255,255,255,.14);border-radius:24px;padding:28px;box-shadow:0 30px 90px #0009;position:relative}.account-panel h2{font:600 28px 'Clash Display',sans-serif;margin:0 35px 7px 0}.account-panel p{color:var(--text-dim);font-size:14px}.account-close{position:absolute;right:18px;top:18px;width:36px;height:36px;border:1px solid var(--border);border-radius:50%;background:transparent;color:var(--text);font-size:20px;cursor:pointer}.account-form{display:grid;gap:13px;margin-top:22px}.account-form label{font-size:12px;color:var(--text-dim);display:grid;gap:6px}.account-form input{width:100%;padding:12px 14px;border:1px solid var(--border-strong);border-radius:11px;background:#0d0d14;color:var(--text);font:14px Inter,sans-serif}.account-submit{padding:13px;border:0;border-radius:12px;background:linear-gradient(120deg,var(--pink),#b8a6ff);color:#100d17;font-weight:700;cursor:pointer}.account-switch{margin-top:16px!important}.account-link{color:var(--accent);background:none;border:0;text-decoration:underline;cursor:pointer;font:inherit}.account-feedback{min-height:20px;color:#ff9ab9!important}.profile-card{margin-top:18px;padding:15px;border:1px solid var(--border);border-radius:15px;background:rgba(255,255,255,.035)}.profile-card strong{display:block;color:var(--text);margin-bottom:2px}.profile-list{margin:10px 0 0;padding-left:18px;color:var(--text-dim);font-size:13px}.profile-actions{display:flex;gap:9px;margin-top:18px}.profile-actions button{flex:1;padding:11px;border:1px solid var(--border-strong);border-radius:11px;background:rgba(255,255,255,.06);color:var(--text);font-weight:600;cursor:pointer}.profile-actions .logout-btn{color:#ff9ab9}
+
 </style>
 </head>
 <body>
 
 <nav>
-  <div class="logo">
-    <div class="logo-icon">✈</div>
-    <span>Travelwise</span>
+  <div class="nav-inner">
+    <div class="logo"><div class="logo-icon">✈</div><span>Travelwise</span></div>
+    <div class="account-nav" id="accountNav"></div>
   </div>
 </nav>
 
@@ -651,6 +656,9 @@ nav {
 </main>
 
 <div class="toast" id="toast"></div>
+<div class="account-backdrop" id="accountBackdrop" role="dialog" aria-modal="true" aria-labelledby="accountTitle">
+  <section class="account-panel"><button type="button" class="account-close" id="accountClose" aria-label="Close">×</button><div id="accountContent"></div></section>
+</div>
 
 <script>
 const answers = {};
@@ -920,6 +928,7 @@ document.getElementById('surveyForm').addEventListener('submit', async (e) => {
     if (!res.ok) throw new Error(data.error || 'Server error');
     
     sessionStorage.setItem('travelwiseRecommendations', JSON.stringify(data));
+    saveTravelActivity(payload, data);
 
     // Switch Screens
     document.getElementById('surveyScreen').classList.remove('active');
@@ -1046,6 +1055,21 @@ if (new URLSearchParams(window.location.search).get('return') === 'recommendatio
     }
   }
 }
+
+const TW_USERS_KEY='travelwiseDemoUsers', TW_CURRENT_KEY='travelwiseCurrentUser', TW_ACTIVITY_KEY='travelwiseActivity';
+function twRead(key, fallback){try{return JSON.parse(localStorage.getItem(key)) ?? fallback}catch{return fallback}}
+function twCurrent(){return twRead(TW_CURRENT_KEY,null)}
+function twWrite(key,value){localStorage.setItem(key,JSON.stringify(value))}
+function saveTravelActivity(preferences,result){const user=twCurrent();if(!user)return;const all=twRead(TW_ACTIVITY_KEY,{});const list=all[user.email]||[];list.unshift({date:new Date().toISOString(),preferences:{...preferences},destinations:(result.recommendations||[]).slice(0,5).map(d=>d.name||d.destination||'Destination')});all[user.email]=list.slice(0,10);twWrite(TW_ACTIVITY_KEY,all)}
+function renderAccountNav(){const nav=document.getElementById('accountNav');if(!nav)return;const user=twCurrent();nav.innerHTML=user?`<button class="account-btn" type="button" data-account="profile"><span class="account-avatar">${(user.username||'T').slice(0,1).toUpperCase()}</span>${escapeHtml(user.username||'My profile')}</button>`:`<button class="account-btn" type="button" data-account="login">Log in</button><button class="account-join" type="button" data-account="signup">Sign up</button>`}
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function openAccount(view){const modal=document.getElementById('accountBackdrop');modal.classList.add('open');renderAccountView(view)}
+function renderAccountView(view){const root=document.getElementById('accountContent'), user=twCurrent();if(view==='profile'&&user){const history=(twRead(TW_ACTIVITY_KEY,{})[user.email]||[]),latest=history[0]?.preferences;root.innerHTML=`<h2 id="accountTitle">Your travel profile</h2><p>Your account and travel activity are saved on this device.</p><div class="profile-card"><strong>${escapeHtml(user.username)}</strong><span>${escapeHtml(user.email)}</span></div>${latest?`<div class="profile-card"><strong>Most recent preferences</strong><p>Budget: ${escapeHtml(latest.form_b||'—')} · Season: ${escapeHtml(latest.form_h||'—')} · Trip length: ${escapeHtml(latest.form_c||'—')}</p></div>`:''}<div class="profile-card"><strong>Recent searches</strong>${history.length?`<ul class="profile-list">${history.slice(0,5).map(item=>`<li>${escapeHtml(item.destinations?.filter(Boolean).join(', ')||'Travel preferences')} <span>· ${new Date(item.date).toLocaleDateString()}</span></li>`).join('')}</ul>`:'<p>No searches saved yet. Complete the survey to see your recent recommendations here.</p>'}</div><div class="profile-actions"><button type="button" data-account="close">Done</button><button class="logout-btn" type="button" data-account="logout">Log out</button></div>`;return}const signup=view==='signup';root.innerHTML=`<h2 id="accountTitle">${signup?'Create your account':'Welcome back'}</h2><p>${signup?'Save your preferences and recent destination searches.':'Log in to see your saved travel activity.'}</p><form class="account-form" id="accountForm">${signup?'<label>Your name<input name="username" autocomplete="name" required maxlength="40" placeholder="e.g. Alex"></label>':''}<label>Email address<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label><label>Password<input name="password" type="password" autocomplete="${signup?'new-password':'current-password'}" required minlength="4" placeholder="At least 4 characters"></label><button class="account-submit" type="submit">${signup?'Create account':'Log in'}</button><p class="account-feedback" id="accountFeedback" aria-live="polite"></p></form><p class="account-switch">${signup?'Already have an account?':'New to Travelwise?'} <button class="account-link" type="button" data-account="${signup?'login':'signup'}">${signup?'Log in':'Create an account'}</button></p>`;document.getElementById('accountForm').addEventListener('submit',handleAccountSubmit)}
+function handleAccountSubmit(event){event.preventDefault();const form=new FormData(event.currentTarget),email=String(form.get('email')).trim().toLowerCase(),password=String(form.get('password')),users=twRead(TW_USERS_KEY,[]),signup=!!form.get('username'),feedback=document.getElementById('accountFeedback');if(signup){if(users.some(u=>u.email===email)){feedback.textContent='An account with this email already exists. Please log in.';return}const user={username:String(form.get('username')).trim(),email,password};users.push(user);twWrite(TW_USERS_KEY,users);twWrite(TW_CURRENT_KEY,{username:user.username,email:user.email});renderAccountNav();renderAccountView('profile')}else{const user=users.find(u=>u.email===email&&u.password===password);if(!user){feedback.textContent='Email or password was not recognized.';return}twWrite(TW_CURRENT_KEY,{username:user.username,email:user.email});renderAccountNav();renderAccountView('profile')}}
+document.getElementById('accountNav').addEventListener('click',e=>{const action=e.target.closest('[data-account]')?.dataset.account;if(action)openAccount(action)});
+document.getElementById('accountBackdrop').addEventListener('click',e=>{if(e.target.id==='accountBackdrop'||e.target.closest('[data-account="close"]'))e.currentTarget.classList.remove('open');const action=e.target.closest('[data-account]')?.dataset.account;if(action==='login'||action==='signup')renderAccountView(action);if(action==='logout'){localStorage.removeItem(TW_CURRENT_KEY);renderAccountNav();renderAccountView('login')}});
+document.getElementById('accountClose').addEventListener('click',()=>document.getElementById('accountBackdrop').classList.remove('open'));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('accountBackdrop').classList.remove('open')});renderAccountNav();
 </script>
 </body>
 </html>
